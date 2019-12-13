@@ -12,7 +12,7 @@ PINK = (255,192,203)
 PURPLE = (255,0,255)
 ORANGE = (255,165,0)
 GRAY = (100,100,100)
-context = [("Clue 1: https://suferqin.github.io/Gift/",GREEN),
+context = [("Clue 1: https://1105042987.github.io/Gift/",GREEN),
            ("Clue 2: Top",BLUE),
            ("Clue 3: Crack and Light",RED)]
 class Button:
@@ -150,9 +150,9 @@ class Game:
             for j in range(self.mapH):
                 now = np.array([i*self.grid,j*self.grid])
                 dis = np.sqrt(((center-now)**2).sum())
-                if dis < (self.cost-self.difficulty/2)*self.grid*1.2:
+                if dis < (self.cost-self.difficulty/2)*self.grid*1.2 and not self.map[j,i]:
                     # ((position),show_time)
-                    self.light_list[tuple(now)]=[self.map[j,i],300]
+                    self.light_list[tuple(now)]= 100*self.cost+100
                     
 
     def generateMap(self,th):
@@ -179,7 +179,7 @@ class Game:
                     path.put(Next)
 
     def collision(self,rec):
-        if rec.left < 0 or rec.right > self.width or rec.top < 0 or rec.bottom > self.height:
+        if rec.left < 0 or rec.right >= self.width or rec.top < 0 or rec.bottom >= self.height:
             self.end_cont = ("WoW, The fragile little star kissed the hard wall mistakenly.",PURPLE)
             self.end_text.line_color = PURPLE
             self.reset()
@@ -301,11 +301,10 @@ class Game:
             self.screen.fill(BLACK)
             self.energy_bar.draw()
             for key,val in self.light_list.items():
-                if val[1]>0:
-                    self.light_list[key][1]-=2
-                    show = max((val[1]-1)//6,0)
-                    color = (show,0,0) if val[0] else (0,show,0)
-                    pygame.draw.rect(self.screen, color, pygame.Rect(key[0],key[1],self.grid,self.grid))
+                if val>0:
+                    self.light_list[key]-=(self.difficulty+2)
+                    show = min(max((val-1)//3,0),255)
+                    pygame.draw.rect(self.screen, (show,show,0), pygame.Rect(key[0],key[1],self.grid,self.grid))
                 else:
                     pass
             pos = pygame.Rect(self.star_pos.center[0]//self.grid*self.grid,self.star_pos.center[1]//self.grid*self.grid,self.grid,self.grid)
