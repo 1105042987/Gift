@@ -88,10 +88,10 @@ class Game:
         self.screen = pygame.display.set_mode((self.width,self.height))
         # 游戏说明
         insText = [
-            ("Tips ( I hide a clue on every difficulty ): ",BLACK),
+            ("Tips ( I hide a clue in every difficulty of this game ): ",BLACK),
             "Use direction key to move 'you' :)",
             "Use space key to become shiny ~",
-            "Use -/= key to change the scopy you shiny ~",
+            "Use -/= key to change the scopy you shine ~",
         ]
         self.title = Text(mid_w,text_h//2,200,100,self.screen,text_size=50,msg='A Gift For YZX')
         self.ins   = Text(mid_w,text_h,   600, 40,self.screen,text_color=ORANGE,msg=insText,line_width=10,line_color=GRAY)
