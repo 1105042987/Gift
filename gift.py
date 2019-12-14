@@ -16,7 +16,7 @@ context = [("Clue 1: https://1105042987.github.io/Gift/",GREEN),
            ("Clue 2: Top",BLUE),
            ("Clue 3: Crack and Light",RED)]
 class Button:
-    def __init__(self, msg, x, y, w, h, c, screen, text_size=20, text_color=(0,0,0)):
+    def __init__(self, msg, x, y, w, h, c, screen, text_size=20, text_color=BLACK):
         self.button = pygame.Rect(x,y,w,h)
         self.color = c
         self.screen = screen
@@ -76,7 +76,28 @@ class Text:
         pygame.draw.rect(self.screen, self.backGround_color, self.rect_in)
         for textSurf, textRect in self.text_container:
             self.screen.blit(textSurf, textRect)
-    
+
+class Slider:
+    def __init__(self,x,y,length,height,max_num,msg_template,screen,msg_func=int,full_color=GREEN,
+                                            empty_color=None,text_size=20,text_color=BLACK):
+        self.x,self.y,self.h,self.l,self.screen = x,y,height,length,screen
+        self.temp,self.func,self.text_size,self.text_color =  msg_template,msg_func,text_size,text_color
+        self.full = np.array(full_color)
+        self.max = max_num
+        self.Text = pygame.font.SysFont('comicsansms', text_size)
+        self.empty = self.full if empty_color is None else np.array(empty_color)
+
+    def draw(self,val):
+        ratio = val/self.max
+        tmp_color = tuple(((1-ratio)*self.empty+ratio*self.full).astype(int))
+        pygame.draw.rect(self.screen, tmp_color, pygame.Rect(self.x,self.y,int(ratio*self.l),self.h))
+
+        textSurf = self.Text.render(self.temp.format(self.func(val)), True, self.text_color)
+        textRect = textSurf.get_rect()
+        textRect.center = (self.x+int(ratio*self.l/2), self.y+self.h//2)
+        self.screen.blit(textSurf, textRect)
+        
+
 class Game:
     def __init__(self):
         pygame.init()
@@ -119,9 +140,8 @@ class Game:
         self.star = pygame.transform.scale(self.star,(30,30))
         self.star_pos = self.star.get_rect()
         # Canvas 
-        self.energy_max = 20
         self.draw_gift = False
-        self.energy_bar = Button('20',10,30,80,12,(0,255,0),self.screen,8)
+        self.energy_bar = Slider(10,30,80,15,20,'{}',self.screen,int,GREEN,RED,12,BLACK)
         self.cost = 1
         self.Easter_Egg = 0
         self.cost_text = Text(50,15,80,20,self.screen,text_size=18,text_color=WHITE,back_color=BLACK)
@@ -203,7 +223,7 @@ class Game:
     def run(self):
         while True:
             self.clock.tick(60)
-            if self.energy <= self.energy_max:
+            if self.energy <= self.energy_bar.max:
                 self.energy += 0.2/60
             for event in pygame.event.get():    # 遍历所有事件
                 if event.type == pygame.QUIT:
@@ -262,8 +282,6 @@ class Game:
                         elif event.key == pygame.K_UP or event.key == pygame.K_DOWN:
                             move_y = 0
             if self.step == 'GAME':
-                self.energy_bar = Button('{}'.format(int(self.energy)),10,30,80*self.energy//self.energy_max,15,
-                        (255-255*self.energy//self.energy_max,255*self.energy//self.energy_max,0),self.screen,12)
                 self.star_pos = self.star_pos.move((move_x,move_y))
                 self.collision(self.star_pos)
                 move = [x2-x1 for x1,x2 in zip(self.star_s_pos.center,self.star_pos.center)]
@@ -271,8 +289,6 @@ class Game:
                     move[0],move[1] = move[0]//10,move[1]//10
                     self.star_s_pos = self.star_s_pos.move(move)
             elif self.step == 'Vedio':
-                self.energy_bar = Button('{}'.format(int(self.energy)),10,30,80*self.energy//self.energy_max,15,
-                        (255-255*self.energy//self.energy_max,255*self.energy//self.energy_max,0),self.screen,12)
                 move = [x2-x1 for x1,x2 in zip(self.fly_pos.center,self.star_pos.center)]
                 if np.sqrt(move[0]**2+move[1]**2) < 10:
                     self.end_cont = context[self.difficulty]
@@ -299,7 +315,7 @@ class Game:
                     self.gift_text_.draw()
         else:
             self.screen.fill(BLACK)
-            self.energy_bar.draw()
+            self.energy_bar.draw(self.energy)
             for key,val in self.light_list.items():
                 if val>0:
                     self.light_list[key]-=(self.difficulty+2)
