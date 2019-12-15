@@ -2,101 +2,21 @@ import pygame
 import sys
 import numpy as np
 from queue import LifoQueue as Queue
+from Subassembly import *
 
-BLACK = (0, 0, 0)
-WHITE = (255,255,255)
-RED = (255,0,0)
-GREEN = (0,255,0)
-BLUE = (0,200,255)
-PINK = (255,192,203)
-PURPLE = (255,0,255)
-ORANGE = (255,165,0)
-GRAY = (100,100,100)
-context = [("Clue 1: https://1105042987.github.io/Gift/",GREEN),
-           ("Clue 2: Top",BLUE),
-           ("Clue 3: Crack and Light",RED)]
-class Button:
-    def __init__(self, msg, x, y, w, h, c, screen, text_size=20, text_color=BLACK):
-        self.button = pygame.Rect(x,y,w,h)
-        self.color = c
-        self.screen = screen
-        Text = pygame.font.SysFont('comicsansms', text_size)
-        self.textSurf = Text.render(msg, True, text_color)
-        self.textRect = self.textSurf.get_rect()
-        self.textRect.center = ( (x+(w/2)), (y+(h/2)))
 
-    def isClick(self, pos):
-        return self.button.collidepoint(pos)
-    
-    def draw(self):
-        pygame.draw.rect(self.screen, self.color, self.button)
-        self.screen.blit(self.textSurf, self.textRect)
+context = [
+    ("Clue 1: https://1105042987.github.io/Gift/",GREEN),
+    ("Clue 2: Top",BLUE),
+    ("Clue 3: Crack and Light",RED)
+]
 
-class Text:
-    def __init__(self,center_x, center_y, w, h, screen, back_color = WHITE, text_size=20, 
-                        text_color=(0,0,0), line_width=0, line_color = None, msg = ['']):
-        self.default_msg = msg if type(msg) == list else [msg]
-        self.screen = screen
-        self.Text = pygame.font.SysFont('comicsansms', text_size)
-        self.text_color = text_color
-        self.backGround_color = back_color
-        self.last = []
-
-        self.text_height = h
-        self.text_width = w
-        self.center = (center_x,center_y)
-        self.line_width = line_width
-        self.line_color = text_color if line_color is None else line_color
-            
-    def get_rects(self,msg):
-        num = len(msg)
-        x,y = (self.center[0]-self.text_width//2), (self.center[1]-(num*self.text_height)//2)
-        self.rect_in = pygame.Rect(x,y,self.text_width,self.text_height*num)
-        self.rect_out =  pygame.Rect(x-self.line_width,y-self.line_width,self.text_width+
-                            self.line_width*2,self.text_height*num+self.line_width*2)
-        self.text_container = []
-        for i in range(num):
-            if type(msg[i]) is tuple:
-                textSurf = self.Text.render(msg[i][0], True, msg[i][1])
-            else:
-                textSurf = self.Text.render(msg[i], True, self.text_color)
-            textRect = textSurf.get_rect()
-            textRect.center = ((x+(self.text_width//2)), (y+(self.text_height//2))+i*self.text_height)
-            self.text_container.append((textSurf,textRect))
-    
-    def draw(self, msg=None):
-        if self.last != msg:
-            self.last = msg
-            if msg is None:
-                msg = self.default_msg
-            elif type(msg) is not list:
-                msg = [msg]
-            self.get_rects(msg)
-        pygame.draw.rect(self.screen, self.line_color, self.rect_out)
-        pygame.draw.rect(self.screen, self.backGround_color, self.rect_in)
-        for textSurf, textRect in self.text_container:
-            self.screen.blit(textSurf, textRect)
-
-class Slider:
-    def __init__(self,x,y,length,height,max_num,msg_template,screen,msg_func=int,full_color=GREEN,
-                                            empty_color=None,text_size=20,text_color=BLACK):
-        self.x,self.y,self.h,self.l,self.screen = x,y,height,length,screen
-        self.temp,self.func,self.text_size,self.text_color =  msg_template,msg_func,text_size,text_color
-        self.full = np.array(full_color)
-        self.max = max_num
-        self.Text = pygame.font.SysFont('comicsansms', text_size)
-        self.empty = self.full if empty_color is None else np.array(empty_color)
-
-    def draw(self,val):
-        ratio = val/self.max
-        tmp_color = tuple(((1-ratio)*self.empty+ratio*self.full).astype(int))
-        pygame.draw.rect(self.screen, tmp_color, pygame.Rect(self.x,self.y,int(ratio*self.l),self.h))
-
-        textSurf = self.Text.render(self.temp.format(self.func(val)), True, self.text_color)
-        textRect = textSurf.get_rect()
-        textRect.center = (self.x+int(ratio*self.l/2), self.y+self.h//2)
-        self.screen.blit(textSurf, textRect)
-        
+insText = [
+    ("Tips ( I hide a clue in every difficulty of this game ): ",BLACK),
+    "Use direction key to move 'you' :)",
+    "Use space key to become shiny ~",
+    "Use -/= key to change the scopy you shine ~",
+]
 
 class Game:
     def __init__(self):
@@ -108,12 +28,6 @@ class Game:
         self.clock = pygame.time.Clock()
         self.screen = pygame.display.set_mode((self.width,self.height))
         # 游戏说明
-        insText = [
-            ("Tips ( I hide a clue in every difficulty of this game ): ",BLACK),
-            "Use direction key to move 'you' :)",
-            "Use space key to become shiny ~",
-            "Use -/= key to change the scopy you shine ~",
-        ]
         self.title = Text(mid_w,text_h//2,200,100,self.screen,text_size=50,msg='A Gift For YZX')
         self.ins   = Text(mid_w,text_h,   600, 40,self.screen,text_color=ORANGE,msg=insText,line_width=10,line_color=GRAY)
         self.end_text = Text(mid_w,500,   600, 50,self.screen,line_width=5)
@@ -128,7 +42,7 @@ class Game:
         self.but3 = Button('Hard',   mid_w+150, 400, 100, 50, RED,   self.screen)
         # MAP
         self.mapH,self.mapW = self.height//self.grid, self.width//self.grid
-        # 载入翅膀
+        # 载入fly
         self.fly = pygame.image.load('pic/fly.png')
         self.fly = pygame.transform.scale(self.fly,(40,28))
         self.fly_pos = self.fly.get_rect()
@@ -171,7 +85,7 @@ class Game:
                 now = np.array([i*self.grid,j*self.grid])
                 dis = np.sqrt(((center-now)**2).sum())
                 if dis < (self.cost-self.difficulty/2)*self.grid*1.2 and not self.map[j,i]:
-                    # ((position),show_time)
+                    # {(position):show_time, ... }
                     self.light_list[tuple(now)]= 100*self.cost+100
                     
 
@@ -222,13 +136,15 @@ class Game:
 
     def run(self):
         while True:
+            # FPS:60
             self.clock.tick(60)
-            if self.energy <= self.energy_bar.max:
-                self.energy += 0.2/60
-            for event in pygame.event.get():    # 遍历所有事件
+            # 按键响应
+            for event in pygame.event.get():    
+                ## 遍历所有事件
                 if event.type == pygame.QUIT:
                     sys.exit()
                 if self.step == 'MENU':
+                    ### 主界面按键响应
                     move_x, move_y = 0,0
                     if event.type == pygame.MOUSEBUTTONDOWN:
                         if self.but1.isClick(pygame.mouse.get_pos()):
@@ -243,7 +159,9 @@ class Game:
                             while not self.vaild: self.generateMap(0.5)
                             self.draw_gift = False
                             self.difficulty = 2
+                            self.cost = 2
                 else:
+                    ### 游戏界面按键响应
                     if event.type == pygame.KEYDOWN:
                         if event.key == pygame.K_LEFT:
                             move_x = -1
@@ -275,20 +193,27 @@ class Game:
                                 if self.cost == 20:
                                     self.draw_gift = True
                                     self.step = 'Vedio'
-
                     elif event.type == pygame.KEYUP:
+                        ### 松开按键消除响应
                         if event.key == pygame.K_LEFT or event.key == pygame.K_RIGHT:
                             move_x = 0
                         elif event.key == pygame.K_UP or event.key == pygame.K_DOWN:
                             move_y = 0
+            # 能量刷新
+            if self.energy <= self.energy_bar.max:
+                self.energy += 0.2/60
+            # 游戏运行逻辑
             if self.step == 'GAME':
+                ## 更新star位置与碰撞检测
                 self.star_pos = self.star_pos.move((move_x,move_y))
                 self.collision(self.star_pos)
                 move = [x2-x1 for x1,x2 in zip(self.star_s_pos.center,self.star_pos.center)]
+                ## 更新从星位置
                 if np.sqrt(move[0]**2+move[1]**2) > 30:
                     move[0],move[1] = move[0]//10,move[1]//10
                     self.star_s_pos = self.star_s_pos.move(move)
             elif self.step == 'Vedio':
+                ## 更新fly位置
                 move = [x2-x1 for x1,x2 in zip(self.fly_pos.center,self.star_pos.center)]
                 if np.sqrt(move[0]**2+move[1]**2) < 10:
                     self.end_cont = context[self.difficulty]
@@ -315,17 +240,17 @@ class Game:
                     self.gift_text_.draw()
         else:
             self.screen.fill(BLACK)
-            self.energy_bar.draw(self.energy)
+            # 绘制发光区域
             for key,val in self.light_list.items():
                 if val>0:
                     self.light_list[key]-=(self.difficulty+2)
                     show = min(max((val-1)//3,0),255)
                     pygame.draw.rect(self.screen, (show,show,0), pygame.Rect(key[0],key[1],self.grid,self.grid))
-                else:
-                    pass
-            pos = pygame.Rect(self.star_pos.center[0]//self.grid*self.grid,self.star_pos.center[1]//self.grid*self.grid,self.grid,self.grid)
+            # 绘制感应提示圈
             if self.cost>self.difficulty/2:
                 pygame.draw.circle(self.screen,(100,100,0),self.star_pos.center,int(self.grid*(self.cost-self.difficulty/2)*1.2),3)
+            # 绘制基础元素
+            self.energy_bar.draw(self.energy)
             self.cost_text.draw('Cost: {}'.format(self.cost))
             self.screen.blit(self.star_s, self.star_s_pos)
             self.screen.blit(self.star, self.star_pos)
